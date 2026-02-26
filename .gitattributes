@@ -1,0 +1,5 @@
+* text=auto
+
+# Enforce LF for gradlew
+*.sh text eol=lf
+gradlew text eol=lf

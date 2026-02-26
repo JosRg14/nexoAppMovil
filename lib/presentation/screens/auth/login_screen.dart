@@ -68,10 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Back', // From wireframe
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
                         const SizedBox(height: 20),
                         Text(
                           'Iniciar sesión',

@@ -12,9 +12,11 @@ class ManageEmployeeScreen extends StatefulWidget {
 
 class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
   // Controllers
-  final _nameController = TextEditingController();
-  final _roleController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _nombreController = TextEditingController();
+  final _paternoController = TextEditingController();
+  final _maternoController = TextEditingController();
+  final _correoController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _commissionController = TextEditingController();
   bool _isActive = true;
 
@@ -23,10 +25,13 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
     super.initState();
     if (widget.employee != null) {
       // Pre-fill data if editing
-      _nameController.text = widget.employee!['name'];
-      _roleController.text = widget.employee!['role'];
-      _phoneController.text = '555-123-4567'; // Dummy phone
-      _commissionController.text = '50'; // Dummy commission
+      _nombreController.text = widget.employee!['name'] ?? '';
+      _paternoController.text = widget.employee!['apellido_paterno'] ?? '';
+      _maternoController.text = widget.employee!['apellido_materno'] ?? '';
+      _correoController.text = widget.employee!['correo'] ?? '';
+      _passwordController.text = ''; // Contraseña en blanco por defecto
+      _commissionController.text =
+          widget.employee!['comision']?.toString() ?? '50';
       _isActive = widget.employee!['status'] == 'Activo';
     }
   }
@@ -105,29 +110,38 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
             ),
             const SizedBox(height: 16),
 
+            _buildTextField(label: 'Nombre(s)', controller: _nombreController),
+            const SizedBox(height: 16),
             _buildTextField(
-              label: 'Nombre Completo',
-              controller: _nameController,
+              label: 'Apellido Paterno',
+              controller: _paternoController,
             ),
             const SizedBox(height: 16),
             _buildTextField(
-              label: 'Teléfono',
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
+              label: 'Apellido Materno',
+              controller: _maternoController,
             ),
-
             const SizedBox(height: 32),
-            const Text(
-              'Detalles del Cargo',
-              style: TextStyle(color: Colors.grey),
-            ),
+
+            const Text('Datos de Acceso', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 16),
 
             _buildTextField(
-              label: 'Cargo (ej. Barbero, Recepcionista)',
-              controller: _roleController,
+              label: 'Correo Electrónico',
+              controller: _correoController,
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
+            _buildTextField(
+              label: 'Contraseña',
+              controller: _passwordController,
+              obscureText: true,
+            ),
+            const SizedBox(height: 32),
+
+            const Text('Condiciones', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 16),
+
             Row(
               children: [
                 Expanded(
@@ -200,10 +214,12 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
     required TextEditingController controller,
     TextInputType? keyboardType,
     String? hint,
+    bool obscureText = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      obscureText: obscureText,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
