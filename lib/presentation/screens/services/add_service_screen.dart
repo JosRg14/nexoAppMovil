@@ -55,6 +55,17 @@ class AddServiceScreen extends StatelessWidget {
                 hintText: '\$0.00',
               ),
             ),
+            const SizedBox(height: 24),
+
+            // Duración
+            const TextField(
+              style: TextStyle(color: Colors.white),
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Duración (Minutos)',
+                hintText: 'Ej. 30, 45, 60...',
+              ),
+            ),
             const SizedBox(height: 32),
 
             // Imagen del servicio (opcional)
