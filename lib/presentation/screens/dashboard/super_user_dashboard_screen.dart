@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/admin_chat_screen.dart';
+import 'package:nexoappapp/presentation/widgets/nexo_header.dart';
 
 class SuperUserDashboardScreen extends StatelessWidget {
   const SuperUserDashboardScreen({super.key});
@@ -7,21 +8,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Super Usuario'),
-        automaticallyImplyLeading:
-            false, // Don't show back button automatically if we want it to be a root-like screen
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.of(context).pushReplacementNamed(
-                '/',
-              ); // Assuming '/' is login or use pushReplacement to LoginScreen
-            },
-          ),
-        ],
-      ),
+      appBar: const NexoHeader(),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

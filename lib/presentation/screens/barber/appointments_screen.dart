@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexoappapp/presentation/screens/barber/service_in_progress_screen.dart';
+import 'package:nexoappapp/presentation/widgets/nexo_header.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -130,19 +131,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'NEXOAPP',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-            color: Colors.white,
-          ),
-        ),
-      ),
+      appBar: const NexoHeader(),
       body: views[_currentIndex],
       floatingActionButton: _activeAppointment != null
           ? FloatingActionButton.extended(

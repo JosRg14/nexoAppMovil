@@ -3,6 +3,7 @@ import 'package:nexoappapp/api_connect/auth_service.dart';
 import 'package:nexoappapp/presentation/screens/barber/appointments_screen.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/super_user_dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -116,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               // 1. Llamamos a tu nuevo servicio
                               final api = ApiConnect();
 
-                              // OJO: Asume que creaste emailController y passwordController
                               final userData = await api.login(
                                 emailController.text,
                                 passwordController.text,
@@ -124,6 +124,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                               // 2. Verificamos si el login fue exitoso
                               if (userData != null) {
+                                //Guardado ddel Token con SharedPreferences
+                                final SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString(
+                                  'token',
+                                  userData['token'],
+                                );
+                                await prefs.setString('rol', userData['rol']);
+
                                 final String rol =
                                     userData['rol']; // Sacamos el rol de la respuesta
 
