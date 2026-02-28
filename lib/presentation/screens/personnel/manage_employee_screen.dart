@@ -64,7 +64,6 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
     try {
       final api = ApiConnect();
 
-      // Asegurarnos de que la comisión sea un número válido
       double comisionVal = double.tryParse(_commissionController.text) ?? 0.0;
       String estadoStr = _isActive ? 'activo' : 'inactivo';
 

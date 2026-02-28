@@ -69,4 +69,28 @@ class ServicesApi {
       };
     }
   }
+
+  Future<List<dynamic>> getServices() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('token');
+
+      final response = await _dio.get(
+        '$_baseUrl/servicios',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      if (response.data['success'] == true) {
+        return response.data['data'];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
 }

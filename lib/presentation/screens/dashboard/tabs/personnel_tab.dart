@@ -1,33 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:nexoappapp/presentation/screens/personnel/manage_employee_screen.dart';
+import 'package:nexoappapp/api_connect/personnel_api.dart';
 
-class PersonnelTab extends StatelessWidget {
+class PersonnelTab extends StatefulWidget {
   const PersonnelTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Dummy Data
-    final employees = [
-      {
-        'name': 'Juan Pérez',
-        'role': 'Barbero Senior',
-        'status': 'Activo',
-        'color': Colors.blueAccent,
-      },
-      {
-        'name': 'Carlos Ruiz',
-        'role': 'Barbero',
-        'status': 'Activo',
-        'color': Colors.greenAccent,
-      },
-      {
-        'name': 'Ana Lopéz',
-        'role': 'Recepcionista',
-        'status': 'Inactivo',
-        'color': Colors.orangeAccent,
-      },
-    ];
+  State<PersonnelTab> createState() => _PersonnelTabState();
+}
 
+class _PersonnelTabState extends State<PersonnelTab> {
+  List<dynamic> _employees = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEmployees();
+  }
+
+  // Esta es la función que llamará el RefreshIndicator
+  // Debe ser Future<void> para que el indicador sepa cuándo dejar de girar
+  Future<void> _handleRefresh() async {
+    await _fetchEmployees();
+  }
+
+  Future<void> _fetchEmployees() async {
+    // Si ya estamos cargando, no hacemos nada (evita doble petición)
+    setState(() => _isLoading = true);
+
+    try {
+      final api = PersonnelApi();
+      final data = await api.getEmpleados();
+
+      // Simulación de datos para el ejemplo
+      await Future.delayed(const Duration(seconds: 1)); // Simula delay de red
+
+      if (mounted) {
+        setState(() {
+          _employees = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
@@ -37,45 +58,78 @@ class PersonnelTab extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => const ManageEmployeeScreen(),
             ),
-          );
+          ).then((value) {
+            // Si regresamos de agregar, refrescamos automáticamente
+            _fetchEmployees();
+          });
         },
         backgroundColor: Colors.white,
         child: const Icon(Icons.person_add, color: Colors.black),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            Text(
-              'Personal',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+      // 1. Envolvemos el contenido en el RefreshIndicator
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: Colors.black,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          // IMPORTANTE: Para que el scroll funcione incluso si la lista está vacía
+          // debemos forzar que el contenido sea al menos tan alto como la pantalla.
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              Text(
+                'Personal',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Gestiona tu equipo de trabajo',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              const Text(
+                'Gestiona tu equipo de trabajo',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
 
-            // Employee List
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: employees.length,
-              itemBuilder: (context, index) {
-                final emp = employees[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: _EmployeeCard(employee: emp),
-                );
-              },
-            ),
-          ],
+              if (_isLoading && _employees.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                )
+              else if (_employees.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(80.0),
+                    child: Text(
+                      'No hay empleados.\nDesliza hacia abajo para actualizar.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _employees.length,
+                  itemBuilder: (context, index) {
+                    final emp = _employees[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _EmployeeCard(employee: emp),
+                    );
+                  },
+                ),
+              // Añadimos un espacio extra al final para que el último card
+              // no quede tapado por el botón flotante
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );
@@ -89,7 +143,29 @@ class _EmployeeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Extracción y concatenación segura de nombre completo
+    final String nombre = (employee['nombre'] ?? '').toString();
+    final String paterno = (employee['app_paterno'] ?? '').toString();
+    final String materno = (employee['app_materno'] ?? '').toString();
+
+    // Unimos las piezas y quitamos espacios sobrantes con .trim()
+    final String fullName = '$nombre $paterno $materno'.trim();
+    final String displayName = fullName.isNotEmpty
+        ? fullName
+        : 'Sin nombre registrado';
+
+    // 2. Especialidad y Estado
+    final String role = (employee['especialidad'] ?? 'Barbero').toString();
+
+    // Normalizamos el estado para que funcione con 'Activo', 'activo' o '1'
+    final String rawStatus =
+        employee['estado']?.toString().toLowerCase() ?? 'inactivo';
+    final bool isActive = rawStatus == 'activo' || rawStatus == '1';
+
     return Container(
+      margin: const EdgeInsets.only(
+        bottom: 16.0,
+      ), // Margen inferior para separar tarjetas
       decoration: BoxDecoration(
         color: const Color(0xFF2C2C2C),
         borderRadius: BorderRadius.circular(12),
@@ -100,7 +176,7 @@ class _EmployeeCard extends StatelessWidget {
           backgroundColor: Colors.grey[800],
           radius: 25,
           child: Text(
-            employee['name'][0], // Initials
+            displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -108,7 +184,7 @@ class _EmployeeCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          employee['name'],
+          displayName,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -118,27 +194,23 @@ class _EmployeeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(employee['role'], style: TextStyle(color: Colors.grey[400])),
-            const SizedBox(height: 4),
+            Text(role, style: TextStyle(color: Colors.grey[400])),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Container(
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: employee['status'] == 'Activo'
-                        ? Colors.greenAccent
-                        : Colors.redAccent,
+                    color: isActive ? Colors.greenAccent : Colors.redAccent,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  employee['status'],
+                  isActive ? 'Activo' : 'Inactivo',
                   style: TextStyle(
-                    color: employee['status'] == 'Activo'
-                        ? Colors.greenAccent
-                        : Colors.redAccent,
+                    color: isActive ? Colors.greenAccent : Colors.redAccent,
                     fontSize: 12,
                   ),
                 ),
