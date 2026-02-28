@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:nexoappapp/presentation/screens/auth/login_screen.dart';
 
 import 'package:nexoappapp/presentation/screens/barber/appointments_screen.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/super_user_dashboard_screen.dart';
+import 'package:nexoappapp/presentation/screens/auth/login_screen.dart';
 
 class CheckAuthScreen extends StatefulWidget {
   const CheckAuthScreen({super.key});
