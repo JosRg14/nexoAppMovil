@@ -18,6 +18,7 @@ class ApiConnect {
             'Accept': 'application/json',
           },
           followRedirects: true,
+          // Permitimos que pasen errores 401 para manejarlos como "Credenciales incorrectas"
           validateStatus: (status) => status! < 500,
         ),
       );
@@ -26,10 +27,17 @@ class ApiConnect {
         final apiData = response.data['data'];
         return {'token': apiData['token'], 'rol': apiData['rol']};
       }
+
+      // Si llegamos aquí con un 401 o 404, devolvemos null (credenciales mal)
+      return null;
     } on DioException catch (e) {
-      print("Error en login: ${e.response?.data ?? e.message}");
+      // Si es un error de conexión (no hay internet, host no encontrado, timeout)
+      print("Error de red detectado en Dio: ${e.message}");
+      rethrow; // <--- LANZA el error a la pantalla para que ella muestre "No hay conexión"
+    } catch (e) {
+      print("Error inesperado: $e");
+      rethrow;
     }
-    return null;
   }
 
   Future<bool> registerEmpleado({
