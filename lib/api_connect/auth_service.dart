@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final Dio _dio = Dio();
@@ -33,7 +34,7 @@ class ApiConnect {
     } on DioException catch (e) {
       // Si es un error de conexión (no hay internet, host no encontrado, timeout)
       print("Error de red detectado en Dio: ${e.message}");
-      rethrow; // <--- LANZA el error a la pantalla para que ella muestre "No hay conexión"
+      rethrow;
     } catch (e) {
       print("Error inesperado: $e");
       rethrow;
@@ -97,12 +98,82 @@ class ApiConnect {
         );
       }
     } catch (e) {
-      print("Error en logout de API (posiblemente token ya expirado): $e");
+      debugPrint("Error en logout de API (posiblemente token ya expirado): $e");
     } finally {
       // 2. PASE LO QUE PASE con la API, borramos lo local
       // Así el usuario no se queda trabado si no hay internet
       await clearLocalSession();
     }
     return true;
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/password/forgot',
+        data: {'email': email},
+        options: Options(
+          headers: {
+            'ngrok-skip-browser-warning': '69420',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<bool> verifyOtpCode(String email, String code) async {
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/password/verify-code',
+        data: {'email': email, 'code': code},
+        options: Options(
+          headers: {
+            'ngrok-skip-browser-warning': '69420',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      // Si el código es válido, Laravel responde 200
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      // Si Laravel responde 400 (Código inválido/expirado), Dio lanzará excepción
+      debugPrint("Error en validación de OTP: ${e.response?.data['message']}");
+      rethrow;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/password/reset',
+        data: {
+          'email': email,
+          'code': code,
+          'password': password,
+          'password_confirmation': password,
+        },
+        options: Options(
+          headers: {
+            'ngrok-skip-browser-warning': '69420',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      debugPrint("Error en resetPassword: ${e.response?.data['message']}");
+      rethrow;
+    }
   }
 }

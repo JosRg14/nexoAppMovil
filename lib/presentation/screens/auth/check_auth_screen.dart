@@ -76,9 +76,9 @@ class _CheckAuthScreenState extends State<CheckAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Esta es la pantalla que se ve mientras decide (un simple loading)
+    // Pantalla que se ve mientras decide
     return const Scaffold(
-      backgroundColor: Colors.black, // O el color principal de tu app
+      backgroundColor: Colors.black,
       body: Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }

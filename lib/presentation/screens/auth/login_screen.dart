@@ -4,6 +4,7 @@ import 'package:nexoappapp/presentation/screens/barber/appointments_screen.dart'
 import 'package:nexoappapp/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/super_user_dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nexoappapp/presentation/screens/auth/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // 1. Header Area
                   Container(
-                    height: size.height * 0.30,
+                    height: size.height * 0.20,
                     width: double.infinity,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -110,6 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
+                            prefixIcon: Icon(
+                              Icons.password,
+                              color: Colors.grey,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -123,7 +128,35 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 48),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ForgotPasswordScreen(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
 
                         // Login Button
                         SizedBox(
