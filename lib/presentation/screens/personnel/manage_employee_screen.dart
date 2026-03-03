@@ -199,7 +199,7 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // CAMPO DE CONTRASEÑA CON EL OJO
+              // CAMPO DE CONTRASEÑA
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -236,8 +236,8 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
                 validator: (value) {
                   if (isEditing && (value == null || value.isEmpty))
                     return null;
-                  if (value == null || value.length < 6)
-                    return 'Mínimo 6 caracteres';
+                  if (value == null || value.length < 8)
+                    return 'Mínimo 8 caracteres';
                   if (!_isPasswordComplex(value))
                     return 'Usa una mayúscula y un número';
                   return null;
