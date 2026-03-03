@@ -32,8 +32,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final confirm = confirmPasswordController.text;
 
     // 1. Validaciones locales
-    if (pass.length < 6) {
-      _showError("La contraseña debe tener al menos 6 caracteres.");
+    if (pass.length < 8) {
+      _showError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    final hasUppercase = RegExp(r'[A-Z]').hasMatch(pass);
+    final hasNumber = RegExp(r'[0-9]').hasMatch(pass);
+
+    if (!hasUppercase || !hasNumber) {
+      _showError(
+        "La contraseña debe contener al menos una mayúscula y un número.",
+      );
       return;
     }
 
@@ -47,7 +57,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     try {
       final api = ApiConnect();
 
-      // 2. Llamada real a la API
+      // 2. Llamada a la API
       final success = await api.resetPassword(
         email: widget.email,
         code: widget.code,
@@ -56,11 +66,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (success) {
         if (!mounted) return;
-        // 3. Mostrar diálogo de éxito (este ya lo tienes y redirige al Login)
+        // 3. Mostrar diálogo de éxito
         _showSuccessDialog();
       }
     } catch (e) {
-      // Manejo de errores profesional
+      // Manejo de errores
       String errorMsg = "No se logró conectar al servidor.";
 
       if (e is DioException && e.response?.statusCode == 400) {
