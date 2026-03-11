@@ -19,8 +19,7 @@ class _PersonnelTabState extends State<PersonnelTab> {
     _fetchEmployees();
   }
 
-  // Esta es la función que llamará el RefreshIndicator
-  // Debe ser Future<void> para que el indicador sepa cuándo dejar de girar
+  // Función que llamará el RefreshIndicator
   Future<void> _handleRefresh() async {
     await _fetchEmployees();
   }
@@ -33,8 +32,7 @@ class _PersonnelTabState extends State<PersonnelTab> {
       final api = PersonnelApi();
       final data = await api.getEmpleados();
 
-      // Simulación de datos para el ejemplo
-      await Future.delayed(const Duration(seconds: 1)); // Simula delay de red
+      await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
         setState(() {
@@ -59,21 +57,21 @@ class _PersonnelTabState extends State<PersonnelTab> {
               builder: (context) => const ManageEmployeeScreen(),
             ),
           ).then((value) {
-            // Si regresamos de agregar, refrescamos automáticamente
-            _fetchEmployees();
+            // Si regresamos de agregar con éxito (value == true), refrescamos
+            if (value == true) {
+              _fetchEmployees();
+            }
           });
         },
         backgroundColor: Colors.white,
         child: const Icon(Icons.person_add, color: Colors.black),
       ),
-      // 1. Envolvemos el contenido en el RefreshIndicator
+      // 1. Envolvemos el contenido en el RefreshIndicator para actualizar registros
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         color: Colors.black,
         backgroundColor: Colors.white,
         child: SingleChildScrollView(
-          // IMPORTANTE: Para que el scroll funcione incluso si la lista está vacía
-          // debemos forzar que el contenido sea al menos tan alto como la pantalla.
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
@@ -121,12 +119,14 @@ class _PersonnelTabState extends State<PersonnelTab> {
                     final emp = _employees[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _EmployeeCard(employee: emp),
+                      child: _EmployeeCard(
+                        employee: emp,
+                        // Le pasamos la función para que la llame si edita exitosamente
+                        onRefresh: _fetchEmployees,
+                      ),
                     );
                   },
                 ),
-              // Añadimos un espacio extra al final para que el último card
-              // no quede tapado por el botón flotante
               const SizedBox(height: 80),
             ],
           ),
@@ -138,8 +138,9 @@ class _PersonnelTabState extends State<PersonnelTab> {
 
 class _EmployeeCard extends StatelessWidget {
   final Map<String, dynamic> employee;
+  final VoidCallback onRefresh; // Agregamos la función de recarga
 
-  const _EmployeeCard({required this.employee});
+  const _EmployeeCard({required this.employee, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +149,6 @@ class _EmployeeCard extends StatelessWidget {
     final String paterno = (employee['app_paterno'] ?? '').toString();
     final String materno = (employee['app_materno'] ?? '').toString();
 
-    // Unimos las piezas y quitamos espacios sobrantes con .trim()
     final String fullName = '$nombre $paterno $materno'.trim();
     final String displayName = fullName.isNotEmpty
         ? fullName
@@ -157,7 +157,6 @@ class _EmployeeCard extends StatelessWidget {
     // 2. Especialidad y Estado
     final String role = (employee['especialidad'] ?? 'Barbero').toString();
 
-    // Normalizamos el estado para que funcione con 'Activo', 'activo' o '1'
     final String rawStatus =
         employee['estado']?.toString().toLowerCase() ?? 'inactivo';
     final bool isActive = rawStatus == 'activo' || rawStatus == '1';
@@ -226,7 +225,12 @@ class _EmployeeCard extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => ManageEmployeeScreen(employee: employee),
               ),
-            );
+            ).then((value) {
+              // AQUI ESTÁ EL CAMBIO: Si editó correctamente, recarga la lista
+              if (value == true) {
+                onRefresh();
+              }
+            });
           },
         ),
       ),

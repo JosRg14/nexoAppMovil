@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ServicesApi {
   final String _baseUrl =
-      'https://hypersceptical-yu-skinflinty.ngrok-free.dev/api';
+      "https://devlink-servidorapi.td60xq.easypanel.host/api";
   final Dio _dio = Dio();
 
   Future<Map<String, dynamic>> createService({

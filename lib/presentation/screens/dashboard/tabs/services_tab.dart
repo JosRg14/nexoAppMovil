@@ -111,10 +111,7 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // CAMBIA ESTO por la IP de tu servidor o tu dominio
-    // Si usas el emulador de Android y el servidor es local, usa 10.0.2.2
-    const String baseUrl =
-        "https://hypersceptical-yu-skinflinty.ngrok-free.dev";
+    const String baseUrl = "https://devlink-servidorapi.td60xq.easypanel.host";
 
     final String name = service['nombre'] ?? 'Sin nombre';
     final String duration = "${service['duracion'] ?? 0} min";

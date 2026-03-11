@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nexoappapp/api_connect/auth_service.dart';
+import 'package:nexoappapp/api_connect/personnel_api.dart';
 
 class ManageEmployeeScreen extends StatefulWidget {
   final Map<String, dynamic>? employee;
@@ -28,14 +28,29 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
   @override
   void initState() {
     super.initState();
+    // Auto-llenado si estamos en modo edición
     if (widget.employee != null) {
-      _nombreController.text = widget.employee!['name'] ?? '';
-      _paternoController.text = widget.employee!['apellido_paterno'] ?? '';
-      _maternoController.text = widget.employee!['apellido_materno'] ?? '';
-      _correoController.text = widget.employee!['correo'] ?? '';
+      _nombreController.text =
+          widget.employee!['nombre'] ?? widget.employee!['name'] ?? '';
+      _paternoController.text =
+          widget.employee!['app_paterno'] ??
+          widget.employee!['apellido_paterno'] ??
+          '';
+      _maternoController.text =
+          widget.employee!['app_materno'] ??
+          widget.employee!['apellido_materno'] ??
+          '';
+
+      _correoController.text =
+          widget.employee!['correo'] ??
+          widget.employee!['usuario']?['correo'] ??
+          '';
+
       _commissionController.text =
           widget.employee!['comision']?.toString() ?? '50';
-      _isActive = widget.employee!['status'] == 'Activo';
+      _isActive =
+          widget.employee!['estado'] == 'activo' ||
+          widget.employee!['status'] == 'Activo';
     }
   }
 
@@ -92,7 +107,7 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final api = ApiConnect();
+      final api = PersonnelApi();
 
       final nombre = _nombreController.text.trim();
       final appPaterno = _paternoController.text.trim();
@@ -100,8 +115,10 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
       final correo = _correoController.text.trim();
       final password = _passwordController.text;
       final comisionVal = double.tryParse(_commissionController.text) ?? 0.0;
+      String estadoStr = _isActive ? 'activo' : 'inactivo';
 
       if (widget.employee == null) {
+        // --- MODO REGISTRO ---
         final success = await api.registerEmpleado(
           nombre: nombre,
           appPaterno: appPaterno,
@@ -109,15 +126,43 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
           correo: correo,
           password: password,
           comision: comisionVal,
+          estado: estadoStr,
         );
 
         if (success && mounted) {
           _showSnackBar('Empleado creado exitosamente', Colors.green);
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Retorna true para refrescar la lista
+        } else if (mounted) {
+          _showSnackBar('No se pudo registrar el empleado', Colors.red);
         }
       } else {
-        await Future.delayed(const Duration(seconds: 1));
-        if (mounted) Navigator.pop(context);
+        // --- MODO EDICIÓN ---
+        final String? employeeId =
+            widget.employee!['id_empleado']?.toString() ??
+            widget.employee!['id']?.toString();
+
+        if (employeeId == null) {
+          _showSnackBar('Error: ID no encontrado', Colors.red);
+          return;
+        }
+
+        final success = await api.updateEmpleado(
+          id: employeeId,
+          nombre: nombre,
+          appPaterno: appPaterno,
+          appMaterno: appMaterno,
+          correo: correo,
+          comision: comisionVal,
+          estado: estadoStr,
+          // La contraseña no se envía al editar
+        );
+
+        if (success && mounted) {
+          _showSnackBar('Empleado actualizado exitosamente', Colors.green);
+          Navigator.pop(context, true); // Retorna true para refrescar la lista
+        } else if (mounted) {
+          _showSnackBar('No se pudo actualizar el empleado', Colors.red);
+        }
       }
     } catch (e) {
       _showSnackBar('Error: $e', Colors.red);
@@ -197,52 +242,51 @@ class _ManageEmployeeScreenState extends State<ManageEmployeeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
 
-              // CAMPO DE CONTRASEÑA
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Contraseña',
-                  hintText: isEditing ? '(Opcional al editar)' : null,
-                  hintStyle: const TextStyle(color: Colors.white24),
-                  labelStyle: TextStyle(color: Colors.grey[400]),
-                  errorStyle: const TextStyle(color: Colors.redAccent),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.grey,
+              // Si no está editando, mostramos la contraseña
+              if (!isEditing) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    hintStyle: const TextStyle(color: Colors.white24),
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    errorStyle: const TextStyle(color: Colors.redAccent),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[800]!),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    errorBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.redAccent),
+                    ),
+                    focusedErrorBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.redAccent),
+                    ),
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[800]!),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  errorBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.redAccent),
-                  ),
-                  focusedErrorBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.redAccent),
-                  ),
-                ),
-                validator: (value) {
-                  if (isEditing && (value == null || value.isEmpty))
+                  validator: (value) {
+                    if (value == null || value.length < 8)
+                      return 'Mínimo 8 caracteres';
+                    if (!_isPasswordComplex(value))
+                      return 'Usa una mayúscula y un número';
                     return null;
-                  if (value == null || value.length < 8)
-                    return 'Mínimo 8 caracteres';
-                  if (!_isPasswordComplex(value))
-                    return 'Usa una mayúscula y un número';
-                  return null;
-                },
-              ),
+                  },
+                ),
+              ],
 
               const SizedBox(height: 32),
               const Text('Condiciones', style: TextStyle(color: Colors.grey)),

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final Dio _dio = Dio();
-final String _baseUrl =
-    "https://hypersceptical-yu-skinflinty.ngrok-free.dev/api";
+final String _baseUrl = "https://devlink-servidorapi.td60xq.easypanel.host/api";
+/*"https://hypersceptical-yu-skinflinty.ngrok-free.dev/api";*/
 
 class ApiConnect {
   Future<Map<String, dynamic>?> login(String email, String password) async {
@@ -38,45 +38,6 @@ class ApiConnect {
     } catch (e) {
       print("Error inesperado: $e");
       rethrow;
-    }
-  }
-
-  Future<bool> registerEmpleado({
-    required String nombre,
-    required String appPaterno,
-    required String appMaterno,
-    required String correo,
-    required String password,
-    required double comision,
-  }) async {
-    // 1. Recuperamos el token que guardamos en el Login
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('token');
-
-    try {
-      final response = await _dio.post(
-        '$_baseUrl/admin/register/empleado',
-        data: {
-          'nombre': nombre,
-          'app_paterno': appPaterno,
-          'app_materno': appMaterno,
-          'correo': correo,
-          'contrasena': password,
-          'comision': comision,
-        },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
-        ),
-      );
-
-      return response.statusCode == 201;
-    } on DioException catch (e) {
-      print("Error de permisos o datos: ${e.response?.data}");
-      return false;
     }
   }
 
