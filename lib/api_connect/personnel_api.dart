@@ -9,9 +9,14 @@ class PersonnelApi {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('token');
+      final int? negocioId = prefs.getInt('id_negocio');
+
+      if (negocioId == null) {
+        return [];
+      }
 
       final response = await _dio.get(
-        '$_baseUrl/empleados', // Tu ruta GET
+        '$_baseUrl/mis-empleados',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -26,7 +31,7 @@ class PersonnelApi {
       return [];
     } catch (e) {
       print("Error al obtener empleados: $e");
-      return []; // En caso de error, retornamos lista vacía
+      return [];
     }
   }
 
@@ -39,7 +44,7 @@ class PersonnelApi {
     required double comision,
     required String estado,
   }) async {
-    // 1. Recuperamos el token que guardamos en el Login
+    //Recuperamos el token que guardamos en el Login
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('token');
 
@@ -78,7 +83,6 @@ class PersonnelApi {
     required String correo,
     required double comision,
     required String estado,
-    String? password, // Opcional al editar
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('token');
@@ -94,11 +98,6 @@ class PersonnelApi {
         'estado': estado,
       };
 
-      // Si el usuario escribió algo en el campo de contraseña, lo agregamos
-      if (password != null && password.isNotEmpty) {
-        data['contrasena'] = password;
-      }
-
       final response = await _dio.put(
         '$_baseUrl/empleados/$id',
         data: data,
@@ -110,7 +109,6 @@ class PersonnelApi {
         ),
       );
 
-      // Laravel suele retornar 200 OK para updates exitosos
       return response.statusCode == 200 && response.data['success'] == true;
     } on DioException catch (e) {
       print("Error al actualizar empleado: ${e.response?.data ?? e.message}");

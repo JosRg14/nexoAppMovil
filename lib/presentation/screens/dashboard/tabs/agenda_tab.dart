@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexoappapp/presentation/widgets/manage_appointment_modal.dart';
+import 'package:nexoappapp/api_connect/appointments_api.dart';
 
 class AgendaTab extends StatefulWidget {
   const AgendaTab({super.key});
@@ -9,37 +10,50 @@ class AgendaTab extends StatefulWidget {
 }
 
 class _AgendaTabState extends State<AgendaTab> {
-  // Dummy Data for Today's Appointments
-  final appointments = [
-    {
-      'time': '10:00 AM',
-      'client': 'Roberto Gomez',
-      'service': 'Corte Clásico',
-      'barber': 'Juan Pérez',
-      'status': 'Confirmado',
-    },
-    {
-      'time': '11:30 AM',
-      'client': 'Mario Diaz',
-      'service': 'Barba + Masaje',
-      'barber': 'Carlos Ruiz',
-      'status': 'Pendiente',
-    },
-    {
-      'time': '02:00 PM',
-      'client': 'Luis Torres',
-      'service': 'Corte Niño',
-      'barber': 'Juan Pérez',
-      'status': 'Confirmado',
-    },
-    {
-      'time': '04:15 PM',
-      'client': 'Jose Martinez',
-      'service': 'Tinte',
-      'barber': 'Ana Lopéz',
-      'status': 'Cancelado',
-    },
+  List<dynamic> appointments = [];
+  bool isLoading = true;
+  int selectedDateIndex = 0;
+
+  // Generar los próximos 7 días empezando desde hoy
+  late List<DateTime> next7Days;
+  final List<String> monthNames = [
+    '',
+    'ENE',
+    'FEB',
+    'MAR',
+    'ABR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AGO',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DIC',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final today = DateTime.now();
+    next7Days = List.generate(7, (index) => today.add(Duration(days: index)));
+    _fetchAppointmentsForSelectedDate();
+  }
+
+  Future<void> _fetchAppointmentsForSelectedDate() async {
+    setState(() => isLoading = true);
+
+    // Instancia de API
+    final api = AppointmentsApi();
+    final data = await api.getAppointmentsByDate(next7Days[selectedDateIndex]);
+
+    if (mounted) {
+      setState(() {
+        appointments = data;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,40 +104,52 @@ class _AgendaTabState extends State<AgendaTab> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: 7, // Next 7 days
+              itemCount: next7Days.length,
               itemBuilder: (context, index) {
-                final isSelected = index == 0; // Today selected by default
-                return Container(
-                  width: 60,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(12),
-                    border: isSelected
-                        ? null
-                        : Border.all(color: Colors.grey[800]!),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'ENE',
-                        style: TextStyle(
-                          color: isSelected ? Colors.black : Colors.grey,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                final date = next7Days[index];
+                final isSelected = index == selectedDateIndex;
+
+                return GestureDetector(
+                  onTap: () {
+                    if (!isSelected) {
+                      setState(() => selectedDateIndex = index);
+                      _fetchAppointmentsForSelectedDate();
+                    }
+                  },
+                  child: Container(
+                    width: 60,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF2C2C2C),
+                      borderRadius: BorderRadius.circular(12),
+                      border: isSelected
+                          ? null
+                          : Border.all(color: Colors.grey[800]!),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          monthNames[date.month],
+                          style: TextStyle(
+                            color: isSelected ? Colors.black : Colors.grey,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${30 + index}', // Dummy dates
-                        style: TextStyle(
-                          color: isSelected ? Colors.black : Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 4),
+                        Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            color: isSelected ? Colors.black : Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
@@ -132,16 +158,28 @@ class _AgendaTabState extends State<AgendaTab> {
 
           const SizedBox(height: 16),
 
-          // Appointments List
+          // Appointments List or Loader
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: appointments.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                return _AgendaCard(appointment: appointments[index]);
-              },
-            ),
+            child: isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : appointments.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No hay citas para este día.",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: appointments.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      return _AgendaCard(appointment: appointments[index]);
+                    },
+                  ),
           ),
         ],
       ),
@@ -154,23 +192,53 @@ class _AgendaCard extends StatelessWidget {
 
   const _AgendaCard({required this.appointment});
 
+  Map<String, String> _formatTime(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty)
+      return {'time': '--:--', 'period': ''};
+
+    final parts = timeStr.split(':');
+    if (parts.length < 2) return {'time': timeStr, 'period': ''};
+
+    try {
+      int hour = int.parse(parts[0]);
+      final String minute = parts[1];
+      final String period = hour >= 12 ? 'PM' : 'AM';
+      if (hour > 12) hour -= 12;
+      if (hour == 0) hour = 12;
+      return {
+        'time': '${hour.toString().padLeft(2, '0')}:$minute',
+        'period': period,
+      };
+    } catch (e) {
+      return {'time': timeStr, 'period': ''};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final status = appointment['status'];
+    final status = appointment['estado']?.toString().toLowerCase() ?? '';
     Color statusColor;
+
     switch (status) {
-      case 'Confirmado':
+      case 'confirmada':
+      case 'confirmado':
         statusColor = Colors.greenAccent;
         break;
-      case 'Pendiente':
+      case 'pendiente':
         statusColor = Colors.orangeAccent;
         break;
-      case 'Cancelado':
+      case 'cancelada':
+      case 'cancelado':
         statusColor = Colors.redAccent;
         break;
       default:
         statusColor = Colors.grey;
     }
+
+    final timeData = _formatTime(appointment['hora_inicio']);
+    final cliente = appointment['cliente'];
+    final empleado = appointment['empleado'];
+    final servicio = appointment['servicio'];
 
     return GestureDetector(
       onTap: () {
@@ -191,11 +259,10 @@ class _AgendaCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Time
             Column(
               children: [
                 Text(
-                  appointment['time'].split(' ')[0], // "10:00"
+                  timeData['time']!,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -203,38 +270,34 @@ class _AgendaCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  appointment['time'].split(' ')[1], // "AM"
+                  timeData['period']!,
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
             const SizedBox(width: 16),
-
-            // Divider
             Container(width: 1, height: 40, color: Colors.grey[700]),
             const SizedBox(width: 16),
-
-            // Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    appointment['client'],
+                    // CORRECCIÓN: Concatenación segura de nombres
+                    '${cliente?['nombre'] ?? 'Desconocido'} ${cliente?['app_paterno'] ?? ''}'
+                        .trim(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    appointment['service'],
+                    servicio?['nombre_servicio'] ?? 'Sin servicio',
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ],
               ),
             ),
-
-            // Barber Avatar (Assigned)
             Column(
               children: [
                 const CircleAvatar(
@@ -244,7 +307,8 @@ class _AgendaCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  appointment['barber'].split(' ')[0], // First name
+                  // CORRECCIÓN: Split seguro
+                  (empleado?['nombre']?.toString().split(' ').first) ?? 'N/A',
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
               ],

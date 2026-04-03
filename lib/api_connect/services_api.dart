@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ServicesApi {
@@ -74,9 +75,16 @@ class ServicesApi {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('token');
+      final int? negocioId = prefs.getInt('id_negocio');
+
+      debugPrint('token: $token');
+
+      if (negocioId == null) {
+        return [];
+      }
 
       final response = await _dio.get(
-        '$_baseUrl/servicios',
+        '$_baseUrl/mis-servicios',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',

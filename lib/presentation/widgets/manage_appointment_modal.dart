@@ -13,7 +13,6 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
   late String _selectedBarber;
   String? _status;
 
-  // Controllers for new appointment
   final _clientController = TextEditingController();
   final _serviceController = TextEditingController();
 
@@ -23,8 +22,11 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
   void initState() {
     super.initState();
     if (widget.appointment != null) {
-      _selectedBarber = widget.appointment!['barber'];
-      _status = widget.appointment!['status'];
+      // CORRECCIÓN: Usar llaves correctas del API y operadores '??' para evitar nulos
+      // Si 'empleado' es null, usamos el primero de la lista por defecto
+      _selectedBarber =
+          widget.appointment!['empleado']?['nombre'] ?? _barbers.first;
+      _status = widget.appointment!['estado']?.toString() ?? 'Pendiente';
     } else {
       _selectedBarber = _barbers.first;
       _status = 'Pendiente';
@@ -34,6 +36,12 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.appointment != null;
+
+    // Extraemos datos anidados de forma segura para la UI
+    final String nombreCliente =
+        widget.appointment?['cliente']?['nombre'] ?? 'Cliente Desconocido';
+    final String nombreServicio =
+        widget.appointment?['servicio']?['nombre_servicio'] ?? 'Sin servicio';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -48,14 +56,14 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 isEditing ? 'Gestionar Cita' : 'Asignar Nueva Cita',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: const TextStyle(
                   color: Colors.white,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -67,7 +75,6 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
           ),
           const SizedBox(height: 24),
 
-          // Client Info (Read-only if editing, Input if new)
           if (isEditing)
             Row(
               children: [
@@ -80,7 +87,7 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.appointment!['client'],
+                      nombreCliente, // Variable segura creada arriba
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -88,7 +95,7 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
                       ),
                     ),
                     Text(
-                      widget.appointment!['service'],
+                      nombreServicio, // Variable segura creada arriba
                       style: const TextStyle(color: Colors.grey),
                     ),
                   ],
@@ -113,13 +120,12 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
             ),
 
           const SizedBox(height: 32),
-
-          // 1. Assign Barber
           const Text(
             'Barbero Asignado',
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 8),
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
@@ -128,62 +134,38 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: _selectedBarber,
+                value: _barbers.contains(_selectedBarber)
+                    ? _selectedBarber
+                    : _barbers.first,
                 dropdownColor: const Color(0xFF2C2C2C),
                 isExpanded: true,
                 style: const TextStyle(color: Colors.white),
-                icon: const Icon(Icons.person_outline, color: Colors.white),
-                items: _barbers.map((barber) {
-                  return DropdownMenuItem(value: barber, child: Text(barber));
-                }).toList(),
+                items: _barbers
+                    .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                    .toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedBarber = val);
                 },
               ),
             ),
           ),
-
           const SizedBox(height: 24),
 
-          // 2. Cancellation Action (Only if Editing)
-          if (isEditing) ...[
-            if (_status != 'Cancelado')
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    setState(() => _status = 'Cancelado');
-                    // TODO: Logic to update status
-                    Navigator.pop(context);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.redAccent),
-                    foregroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  icon: const Icon(Icons.block),
-                  label: const Text('CANCELAR CITA'),
+          if (isEditing && _status?.toLowerCase() != 'cancelado')
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent),
+                  foregroundColor: Colors.redAccent,
                 ),
-              )
-            else
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.1),
-                  border: Border.all(color: Colors.redAccent),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Esta cita ha sido cancelada',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.redAccent),
-                ),
+                icon: const Icon(Icons.block),
+                label: const Text('CANCELAR CITA'),
               ),
-            const SizedBox(height: 16),
-          ],
+            ),
 
-          // Save/Create Button
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -191,12 +173,10 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: Text(isEditing ? 'GUARDAR CAMBIOS' : 'ASIGNAR CITA'),
             ),
           ),
-          const SizedBox(height: 16), // Bottom padding
         ],
       ),
     );
@@ -213,12 +193,9 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: Colors.grey),
-        labelStyle: TextStyle(color: Colors.grey[400]),
+        labelStyle: const TextStyle(color: Colors.grey),
         enabledBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.grey[800]!),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white),
         ),
       ),
     );

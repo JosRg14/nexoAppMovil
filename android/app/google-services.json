@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "113357000911",
+    "project_id": "nexoapi-login",
+    "storage_bucket": "nexoapi-login.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113357000911:android:b0210c0d8ef4ef5b4ba7ba",
+        "android_client_info": {
+          "package_name": "com.example.nexoappapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "113357000911-khcdu21jm23raeusqh5885flkrbl1nam.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nexoappapp",
+            "certificate_hash": "598bcec802c0e7024a14354d07e8f3ca0e9b72d4"
+          }
+        },
+        {
+          "client_id": "113357000911-h8dfvu2tts1qjh9vk6ds2va8qftg85b6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5TLlpzeo1c4zOw7Ma5MVfsI8ClDoBx7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "113357000911-h8dfvu2tts1qjh9vk6ds2va8qftg85b6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
                         Text(
                           'Iniciar sesión',
                           style: Theme.of(context).textTheme.headlineLarge
@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             fontSize: 14,
                           ),
                         ),
-                        const SizedBox(height: 48),
+                        const SizedBox(height: 40),
 
                         // Email Field
                         TextField(
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 30),
 
                         // Login Button
                         SizedBox(
@@ -174,6 +174,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                 : const Text('Iniciar Sesión'),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Google Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _handleGoogleLogin,
+                            icon: Image.network(
+                              'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png',
+                              height: 24,
+                            ),
+                            label: const Text(
+                              'Continuar con Google',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.white24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              backgroundColor: Colors.white.withOpacity(
+                                0.05,
+                              ), // Efecto cristal sutil
+                            ),
                           ),
                         ),
                       ],
@@ -213,19 +245,36 @@ class _LoginScreenState extends State<LoginScreen> {
       final userData = await api.login(email, password);
 
       if (userData != null) {
-        // ÉXITO: Guardar sesión y navegar
+        // ÉXITO: Instancia de SharedPreferences
         final SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', userData['token']);
-        await prefs.setString('rol', userData['rol']);
+
+        // 1. Guardar Token y Rol (Datos base)
+        await prefs.setString('token', userData['token'] ?? '');
+        await prefs.setString('rol', userData['rol'] ?? '');
+
+        // 2. Guardar id_negocio (Si viene en el mapa)
+        if (userData['id_negocio'] != null) {
+          await prefs.setInt('id_negocio', userData['id_negocio']);
+        } else {
+          await prefs.remove('id_negocio');
+        }
+
+        // 3. Guardar id_empleado (Solo si el rol es empleado)
+        if (userData['id_empleado'] != null) {
+          await prefs.setInt('id_empleado', userData['id_empleado']);
+        } else {
+          // Si no es empleado, nos aseguramos de borrar cualquier ID anterior
+          await prefs.remove('id_empleado');
+        }
 
         if (!mounted) return;
+
+        // Navegación final
         _navigateBasedOnRol(userData['rol']);
       } else {
-        // El servidor respondió pero no autorizó (userData fue null)
         _showError("Correo o contraseña incorrectos. Inténtalo de nuevo.");
       }
     } catch (e) {
-      // AQUÍ es donde cae el 'rethrow' de Dio cuando apagas el internet
       _showError(
         "No se logró conectar al servidor. Comprueba tu conexión o inténtalo más tarde.",
       );
@@ -269,5 +318,30 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final api = ApiConnect();
+      final userData = await api.loginWithGoogle('admin');
+
+      if (userData != null) {
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', userData['token']);
+        await prefs.setString('rol', userData['rol']);
+
+        if (!mounted) return;
+        _navigateBasedOnRol(userData['rol']);
+      }
+    } catch (e) {
+      debugPrint("Error atrapado en UI: $e");
+      final cleanMessage = e.toString().replaceAll('Exception: ', '');
+
+      _showError(cleanMessage);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }

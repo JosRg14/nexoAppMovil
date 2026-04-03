@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexoappapp/api_connect/appointments_api.dart';
 import 'package:nexoappapp/presentation/screens/barber/service_evidence_screen.dart';
 
 class ServiceInProgressScreen extends StatelessWidget {
@@ -8,13 +9,27 @@ class ServiceInProgressScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- EXTRACCIÓN SEGURA DE DATOS ---
+    final int idCita = appointment['id_cita'] ?? 0;
+
+    final servicioMap = appointment['servicio'] ?? {};
+    final String serviceName = servicioMap['nombre_servicio'] ?? 'Servicio';
+    final String price = '\$${servicioMap['precio'] ?? '0.00'}';
+
+    final clienteMap = appointment['cliente'] ?? {};
+    final String clientName =
+        '${clienteMap['nombre'] ?? 'Desconocido'} ${clienteMap['app_paterno'] ?? ''}'
+            .trim();
+
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
+        centerTitle: true,
+        title: const Text(
           'NEXOAPP',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
             color: Colors.white,
@@ -56,19 +71,28 @@ class ServiceInProgressScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Service Details
+            // Detalles del Servicio
             Text(
-              appointment['service'],
-              style: const TextStyle(color: Colors.grey, fontSize: 18),
+              serviceName.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                letterSpacing: 1,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              appointment['price'],
+              price,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Cliente: $clientName",
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
 
             const Spacer(),
@@ -78,27 +102,71 @@ class ServiceInProgressScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
-                  // Navigate to evidence screen
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ServiceEvidenceScreen(appointment: appointment),
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.orangeAccent,
+                      ),
                     ),
                   );
 
-                  // If evidence completed (returned true), propogate completion
-                  if (result == true && context.mounted) {
-                    Navigator.pop(context, true);
+                  try {
+                    final api = AppointmentsApi();
+
+                    // Ahora 'response' es el Map que viene del return de la API
+                    final response = await api.completarCita(idCita);
+
+                    if (context.mounted)
+                      Navigator.pop(context); // Quitar loader
+
+                    // 1. Validamos usando la estructura real de tu JSON
+                    if (response != null && response['success'] == true) {
+                      // 2. Extraemos el registro_id desde data (según tu controlador)
+                      final int registroId = response['data']['registro_id'];
+
+                      if (!context.mounted) return;
+
+                      // 3. Navegamos a la pantalla de evidencias pasando el ID real
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ServiceEvidenceScreen(
+                            appointment: appointment,
+                            registroId: registroId,
+                          ),
+                        ),
+                      );
+
+                      if (result == true && context.mounted) {
+                        Navigator.pop(context, true);
+                      }
+                    } else {
+                      // Manejo de errores si success es false o response es null
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Error al completar el servicio. Intenta de nuevo.",
+                          ),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) Navigator.pop(context);
+                    debugPrint("Error en el botón finalizar: $e");
                   }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 5,
                 ),
                 child: const Text(
                   'FINALIZAR SERVICIO',
