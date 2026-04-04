@@ -173,6 +173,8 @@ class ApiConnect {
         // En este endpoint, 'negocio' está al mismo nivel que 'usuario'
         final negocio = apiData['negocio'];
 
+        debugPrint('-----Negocio ID: ${negocio['id_negocio']}');
+
         // Retornamos el id_negocio para que la UI lo guarde
         return {
           'token': apiData['token'],

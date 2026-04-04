@@ -193,8 +193,9 @@ class _AgendaCard extends StatelessWidget {
   const _AgendaCard({required this.appointment});
 
   Map<String, String> _formatTime(String? timeStr) {
-    if (timeStr == null || timeStr.isEmpty)
+    if (timeStr == null || timeStr.isEmpty) {
       return {'time': '--:--', 'period': ''};
+    }
 
     final parts = timeStr.split(':');
     if (parts.length < 2) return {'time': timeStr, 'period': ''};
@@ -216,6 +217,7 @@ class _AgendaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Estado de la cita basado exactamente en "estado" del JSON
     final status = appointment['estado']?.toString().toLowerCase() ?? '';
     Color statusColor;
 
@@ -235,20 +237,42 @@ class _AgendaCard extends StatelessWidget {
         statusColor = Colors.grey;
     }
 
+    // 2. Extracción de datos del JSON
     final timeData = _formatTime(appointment['hora_inicio']);
     final cliente = appointment['cliente'];
     final empleado = appointment['empleado'];
     final servicio = appointment['servicio'];
 
+    // 3. Manejo seguro de los textos a renderizar
+    final String nombreCliente = cliente != null
+        ? '${cliente['nombre'] ?? ''} ${cliente['app_paterno'] ?? ''}'.trim()
+        : 'Desconocido';
+
+    final String nombreServicio = servicio != null
+        ? servicio['nombre_servicio'] ?? 'Sin servicio'
+        : 'Sin servicio';
+
+    final String nombreEmpleado = empleado != null
+        ? (empleado['nombre']?.toString().split(' ').first ?? 'N/A')
+        : 'N/A';
+
     return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
+      onTap: () async {
+        final _AgendaTabState state = context
+            .findAncestorStateOfType<_AgendaTabState>()!;
+        // 1. Guardamos el resultado del modal en una variable
+        final result = await showModalBottomSheet<bool>(
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (context) =>
               ManageAppointmentModal(appointment: appointment),
         );
+
+        // 2. Si el modal devolvió 'true', refrescamos la lista
+        if (result == true) {
+          state._fetchAppointmentsForSelectedDate();
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -283,16 +307,14 @@ class _AgendaCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    // CORRECCIÓN: Concatenación segura de nombres
-                    '${cliente?['nombre'] ?? 'Desconocido'} ${cliente?['app_paterno'] ?? ''}'
-                        .trim(),
+                    nombreCliente.isEmpty ? 'Desconocido' : nombreCliente,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    servicio?['nombre_servicio'] ?? 'Sin servicio',
+                    nombreServicio,
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ],
@@ -307,8 +329,7 @@ class _AgendaCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  // CORRECCIÓN: Split seguro
-                  (empleado?['nombre']?.toString().split(' ').first) ?? 'N/A',
+                  nombreEmpleado,
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
               ],

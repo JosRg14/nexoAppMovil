@@ -3,7 +3,7 @@ import 'package:nexoappapp/presentation/screens/barber/service_in_progress_scree
 import 'package:nexoappapp/presentation/widgets/nexo_header.dart';
 import 'package:nexoappapp/api_connect/appointments_api.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/appointments/cancel_appointment_screen.dart';
-import 'package:nexoappapp/presentation/screens/barber/reviews_employee.dart'; // Import crucial
+import 'package:nexoappapp/presentation/screens/barber/reviews_employee.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});

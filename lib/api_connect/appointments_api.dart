@@ -199,4 +199,92 @@ class AppointmentsApi {
       return {};
     }
   }
+
+  // Obtener empleados del negocio
+  Future<List<Map<String, dynamic>>> getActiveEmployees() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final int? negocioId = prefs.getInt('id_negocio');
+
+      if (negocioId == null) return [];
+      final response = await _dio.get(
+        '$_baseUrl/api/empleados',
+        queryParameters: {'negocio_id': negocioId, 'estado': 'activo'},
+        options: await _getAuthOptions(),
+      );
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(response.data['data']);
+      }
+      return [];
+    } catch (e) {
+      debugPrint("Error obteniendo empleados: $e");
+      return [];
+    }
+  }
+
+  // Verificar si un empleado tiene un slot libre a una hora específica
+  Future<bool> checkEmployeeAvailability(
+    int empleadoId,
+    String fecha,
+    String horaRequerida,
+    int duracion,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '$_baseUrl/api/disponibilidad/empleado/$empleadoId',
+        queryParameters: {'fecha': fecha, 'duracion': duracion},
+        options: await _getAuthOptions(),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final List<dynamic> slots = response.data['slots'] ?? [];
+        // Comparamos si la hora requerida coincide con el inicio de algún slot disponible
+        // Nota: Asegúrate de que los formatos de hora coincidan (ej. "14:30" vs "14:30:00")
+        return slots.any(
+          (slot) => slot['hora_inicio'].toString().startsWith(horaRequerida),
+        );
+      }
+      return false;
+    } catch (e) {
+      debugPrint(
+        "Error verificando disponibilidad del empleado $empleadoId: $e",
+      );
+      return false;
+    }
+  }
+
+  // Actualizar datos de una cita (incluyendo el cambio de empleado)
+  Future<Map<String, dynamic>> updateAppointment(
+    int idCita,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      // Usamos patch o put según lo tengas definido en tus rutas de Laravel
+      final response = await _dio.put(
+        '$_baseUrl/api/citas/$idCita',
+        data: data,
+        options: await _getAuthOptions(),
+      );
+
+      return {
+        'success': true,
+        'message': response.data['message'] ?? 'Cita actualizada exitosamente',
+      };
+    } on DioException catch (e) {
+      // Aquí atrapamos los errores 400, 409, etc. que manda tu controlador
+      if (e.response != null && e.response?.data != null) {
+        debugPrint("Error al actualizar cita: ${e.response?.data}");
+        return {
+          'success': false,
+          'message':
+              e.response?.data['message'] ?? 'Error al actualizar la cita',
+        };
+      }
+      debugPrint("Error al actualizar cita: ${e.response?.data}");
+      return {'success': false, 'message': 'Error de conexión con el servidor'};
+    } catch (e) {
+      debugPrint('Error al actualizar cita: $e');
+      return {'success': false, 'message': 'Error inesperado: $e'};
+    }
+  }
 }

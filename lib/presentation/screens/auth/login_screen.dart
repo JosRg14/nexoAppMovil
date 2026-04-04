@@ -259,6 +259,8 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.remove('id_negocio');
         }
 
+        debugPrint('-----Negocio ID: ${prefs.getInt('id_negocio')}');
+
         // 3. Guardar id_empleado (Solo si el rol es empleado)
         if (userData['id_empleado'] != null) {
           await prefs.setInt('id_empleado', userData['id_empleado']);
@@ -331,6 +333,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', userData['token']);
         await prefs.setString('rol', userData['rol']);
+
+        if (userData['id_negocio'] != null) {
+          await prefs.setInt('id_negocio', userData['id_negocio']);
+        } else {
+          await prefs.remove('id_negocio');
+        }
 
         if (!mounted) return;
         _navigateBasedOnRol(userData['rol']);
