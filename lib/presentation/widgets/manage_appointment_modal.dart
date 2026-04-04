@@ -15,11 +15,9 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
   final AppointmentsApi _api = AppointmentsApi();
   bool _isSaving = false;
 
-  // Datos de la API
   List<Map<String, dynamic>> _activeBarbers = [];
   bool _isLoadingBarbers = true;
 
-  // Estado del formulario
   int? _selectedBarberId;
   String? _status;
 
@@ -41,7 +39,6 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
         _isLoadingBarbers = false;
 
         if (widget.appointment != null) {
-          // Si editamos, buscamos el ID del empleado actual en la lista
           _selectedBarberId = widget.appointment!['empleado_id'];
           _status = widget.appointment!['estado']?.toString();
           _clientController.text =
@@ -61,7 +58,6 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
     final int idCita = widget.appointment!['id_cita'];
     final int? originalEmpleadoId = widget.appointment!['empleado_id'];
 
-    // Si no hubo cambios, simplemente cerramos sin hacer ruido
     if (_selectedBarberId == originalEmpleadoId) {
       Navigator.pop(context);
       return;
@@ -69,7 +65,6 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
 
     setState(() => _isSaving = true);
 
-    // Llamada a la API
     final result = await _api.updateAppointment(idCita, {
       'empleado_id': _selectedBarberId,
     });
@@ -77,7 +72,6 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
     if (mounted) {
       setState(() => _isSaving = false);
 
-      // Mostramos el SnackBar (el aviso)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
@@ -88,18 +82,28 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
         ),
       );
 
-      // Se cierra el modal independientemente del resultado para no interferir con el SnackBar
-      Navigator.pop(context, true);
+      if (result['success']) {
+        Navigator.pop(context, true);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.appointment != null;
+    final bool isCanceled = _status?.toLowerCase() == 'cancelada';
+
     final String nombreCliente =
         widget.appointment?['cliente']?['nombre'] ?? 'Nuevo Cliente';
     final String nombreServicio =
         widget.appointment?['servicio']?['nombre_servicio'] ?? 'Sin servicio';
+
+    // Extraer horas para el nuevo diseño
+    final String horaInicio =
+        widget.appointment?['hora_inicio']?.toString().substring(0, 5) ??
+        '--:--';
+    final String horaFin =
+        widget.appointment?['hora_fin']?.toString().substring(0, 5) ?? '--:--';
 
     return Container(
       padding: EdgeInsets.only(
@@ -120,50 +124,48 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
           const SizedBox(height: 24),
 
           if (isEditing)
-            _buildClientInfo(nombreCliente, nombreServicio)
+            _buildClientInfo(
+              nombreCliente,
+              nombreServicio,
+              "$horaInicio - $horaFin",
+            )
           else
             _buildNewAppointmentFields(),
 
-          const SizedBox(height: 32),
-          const Text(
-            'Barbero Asignado',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
-
-          _buildBarberDropdown(),
-
-          const SizedBox(height: 24),
-          if (isEditing && _status?.toLowerCase() != 'cancelada')
-            _buildCancelButton(),
-          const SizedBox(height: 16),
-          _buildSubmitButton(isEditing),
+          // Si la cita está cancelada, ocultamos la selección de barbero y el botón de guardar
+          if (!isCanceled) ...[
+            const SizedBox(height: 32),
+            const Text(
+              'Barbero Asignado',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            _buildBarberDropdown(),
+            const SizedBox(height: 24),
+            if (isEditing) _buildCancelButton(),
+            const SizedBox(height: 16),
+            _buildSubmitButton(isEditing),
+          ] else ...[
+            const SizedBox(height: 32),
+            const Center(
+              child: Text(
+                'ESTA CITA SE ENCUENTRA CANCELADA',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader(bool isEditing) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          isEditing ? 'Gestionar Cita' : 'Asignar Nueva Cita',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.close, color: Colors.grey),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildClientInfo(String nombre, String servicio) {
+  // Modificado para incluir el horario
+  Widget _buildClientInfo(String nombre, String servicio, String horario) {
     return Row(
       children: [
         const CircleAvatar(
@@ -183,25 +185,17 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
               ),
             ),
             Text(servicio, style: const TextStyle(color: Colors.grey)),
+            // Nueva línea de horario
+            Text(
+              horario,
+              style: TextStyle(
+                color:
+                    Colors.amber[700], // Un color que resalte un poco el tiempo
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNewAppointmentFields() {
-    return Column(
-      children: [
-        _buildTextField(
-          label: 'Nombre del Cliente',
-          controller: _clientController,
-          icon: Icons.person_outline,
-        ),
-        const SizedBox(height: 16),
-        _buildTextField(
-          label: 'Servicio',
-          controller: _serviceController,
-          icon: Icons.cut_outlined,
         ),
       ],
     );
@@ -232,12 +226,50 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
           items: _activeBarbers.map((b) {
             return DropdownMenuItem<int>(
               value: b['id_empleado'],
-              child: Text(b['nombre'] + ' ' + b['app_paterno'] ?? 'S/N'),
+              child: Text("${b['nombre']} ${b['app_paterno'] ?? ''}"),
             );
           }).toList(),
           onChanged: (val) => setState(() => _selectedBarberId = val),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(bool isEditing) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          isEditing ? 'Gestionar Cita' : 'Asignar Nueva Cita',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close, color: Colors.grey),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewAppointmentFields() {
+    return Column(
+      children: [
+        _buildTextField(
+          label: 'Nombre del Cliente',
+          controller: _clientController,
+          icon: Icons.person_outline,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          label: 'Servicio',
+          controller: _serviceController,
+          icon: Icons.cut_outlined,
+        ),
+      ],
     );
   }
 
