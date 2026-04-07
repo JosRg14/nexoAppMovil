@@ -82,7 +82,7 @@ class _ServiceEvidenceScreenState extends State<ServiceEvidenceScreen> {
 
     final clienteMap = widget.appointment['cliente'] ?? {};
     final String clientName =
-        '${clienteMap['nombre'] ?? 'Cliente'} ${clienteMap['app_paterno'] ?? ''}'
+        '${clienteMap['nombre'] ?? 'Cliente'} ${clienteMap['app_paterno'] ?? 'Sin Cliente Asignado'}'
             .trim();
 
     return Scaffold(

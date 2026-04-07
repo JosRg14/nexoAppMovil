@@ -287,4 +287,51 @@ class AppointmentsApi {
       return {'success': false, 'message': 'Error inesperado: $e'};
     }
   }
+
+  Future<Map<String, dynamic>> createWalkInService(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final int? idEmpleadoLogueado = prefs.getInt('id_empleado');
+
+      // Si el usuario autenticado es un empleado, forzamos su ID.
+      // Si es nulo (es admin), respetamos el 'empleado_id' que viene en el data.
+      if (idEmpleadoLogueado != null) {
+        data['empleado_id'] = idEmpleadoLogueado;
+      }
+
+      final response = await _dio.post(
+        '$_baseUrl/api/empleado/servicio-rapido',
+        data: data,
+        options:
+            await _getAuthOptions(), // Asumo que usas tu método para los headers
+      );
+
+      if (response.statusCode == 201 ||
+          (response.data != null && response.data['success'] == true)) {
+        return {
+          'success': true,
+          'message':
+              response.data['message'] ??
+              'Servicio rápido registrado correctamente',
+          'data': response.data['data'],
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Ocurrió un error inesperado al registrar.',
+      };
+    } on DioException catch (e) {
+      debugPrint('Error en createWalkInService: ${e.response?.data}');
+      return {
+        'success': false,
+        'message':
+            e.response?.data['message'] ?? 'Error de conexión con el servidor',
+      };
+    } catch (e) {
+      debugPrint('Error inesperado: $e');
+      return {'success': false, 'message': 'Error inesperado en la aplicación'};
+    }
+  }
 }

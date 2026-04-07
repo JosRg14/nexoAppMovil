@@ -4,6 +4,7 @@ import 'package:nexoappapp/presentation/widgets/nexo_header.dart';
 import 'package:nexoappapp/api_connect/appointments_api.dart';
 import 'package:nexoappapp/presentation/screens/dashboard/appointments/cancel_appointment_screen.dart';
 import 'package:nexoappapp/presentation/screens/barber/reviews_employee.dart';
+import 'package:nexoappapp/presentation/screens/dashboard/appointments/create_quick_service_modal.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -216,7 +217,33 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 ),
               ),
             )
-          : null,
+          // Si NO hay cita activa, mostramos el botón de servicio sin cita
+          : FloatingActionButton.extended(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const CreateQuickServiceModal(),
+                ).then((value) {
+                  // Si el servicio se registró con éxito, recargamos la lista del empleado
+                  if (value == true) {
+                    setState(() {
+                      _weeklyAppointmentsFuture = _fetchNext7Days();
+                    });
+                  }
+                });
+              },
+              backgroundColor: Colors.white,
+              icon: const Icon(Icons.flash_on, color: Colors.black),
+              label: const Text(
+                'SERVICIO SIN CITA',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(splashColor: Colors.transparent),
         child: BottomNavigationBar(
