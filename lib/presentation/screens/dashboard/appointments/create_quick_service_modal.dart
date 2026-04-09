@@ -171,6 +171,8 @@ class _CreateQuickServiceModalState extends State<CreateQuickServiceModal> {
       precioFinal = double.tryParse(_priceController.text);
     }
 
+    final String estadoInicial = _isEmployee ? 'completada' : 'pendiente';
+
     // 4. Armar el payload
     final Map<String, dynamic> payload = {
       'empleado_id': _selectedBarberId,
@@ -178,6 +180,7 @@ class _CreateQuickServiceModalState extends State<CreateQuickServiceModal> {
       'fecha': fechaFormat,
       'hora_inicio': horaFormat,
       'precio': precioFinal,
+      'estado': estadoInicial,
     };
 
     // 5. Enviar a la API
@@ -189,35 +192,41 @@ class _CreateQuickServiceModalState extends State<CreateQuickServiceModal> {
       if (result['success']) {
         final data = result['data'];
 
-        // --- INICIO DE LLAMADA A EVIDENCIAS ---
-
-        // Buscamos el nombre del servicio para que no salga vacío en la siguiente pantalla
-        final servicioSeleccionado = _services.firstWhere(
-          (s) => s['id'] == _selectedServiceId,
-          orElse: () => {'nombre': 'Servicio Rápido'},
-        );
-
-        // Creamos el objeto mock para la pantalla de evidencias
-        final Map<String, dynamic> mockAppointment = {
-          'servicio': {'nombre_servicio': servicioSeleccionado['nombre']},
-          'cliente': {'nombre': 'Cliente', 'app_paterno': 'General (Walk-in)'},
-          'precio_total': data['precio'],
-        };
-
-        // 1. Cerramos el modal primero notificando que hubo éxito (true)
+        // 1. Cerramos el modal actual notificando éxito para refrescar la lista de atrás
         Navigator.pop(context, true);
 
-        // 2. Navegamos a la pantalla de evidencias usando el registro_id que devolvió Laravel
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceEvidenceScreen(
-              appointment: mockAppointment,
-              registroId: data['registro_id'],
-            ),
-          ),
-        );
+        // --- INICIO DE LLAMADA CONDICIONAL A EVIDENCIAS ---
 
+        // Solo redirigimos si el estado devuelto por la API es 'completada'
+        if (data['estado'] == 'completada') {
+          // Buscamos el nombre del servicio para el mock
+          final servicioSeleccionado = _services.firstWhere(
+            (s) => s['id'] == _selectedServiceId,
+            orElse: () => {'nombre': 'Servicio Rápido'},
+          );
+
+          final Map<String, dynamic> mockAppointment = {
+            'servicio': {'nombre_servicio': servicioSeleccionado['nombre']},
+            'cliente': {
+              'nombre': 'Cliente',
+              'app_paterno': 'General (Walk-in)',
+            },
+            'precio_total': data['precio'],
+          };
+
+          // Navegamos a la pantalla de evidencias
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ServiceEvidenceScreen(
+                appointment: mockAppointment,
+                registroId: data['registro_id'],
+              ),
+            ),
+          );
+        } else {
+          _showSnackBar('Cita registrada como pendiente');
+        }
         // --- FIN DE LLAMADA A EVIDENCIAS ---
       } else {
         _showSnackBar(result['message'], isError: true);

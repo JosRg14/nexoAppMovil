@@ -295,10 +295,13 @@ class AppointmentsApi {
       final prefs = await SharedPreferences.getInstance();
       final int? idEmpleadoLogueado = prefs.getInt('id_empleado');
 
+      data['estado'] = 'pendiente';
+
       // Si el usuario autenticado es un empleado, forzamos su ID.
       // Si es nulo (es admin), respetamos el 'empleado_id' que viene en el data.
       if (idEmpleadoLogueado != null) {
         data['empleado_id'] = idEmpleadoLogueado;
+        data['estado'] = 'completada';
       }
 
       final response = await _dio.post(

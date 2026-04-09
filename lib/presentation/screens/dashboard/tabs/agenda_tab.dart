@@ -60,91 +60,24 @@ class _AgendaTabState extends State<AgendaTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      /*floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
         child: const Icon(Icons.add, color: Colors.black),
         onPressed: () {
-          // Mostramos un pequeño menú inferior para elegir la acción
+          // Abrimos directamente el modal de servicio rápido sin pasar por el menú
           showModalBottomSheet(
             context: context,
-            backgroundColor: const Color(0xFF1E1E1E),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (BuildContext bottomSheetContext) {
-              return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text(
-                        '¿Qué deseas registrar?',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.calendar_today,
-                        color: Colors.white,
-                      ),
-                      title: const Text(
-                        'Agendar Nueva Cita',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      subtitle: const Text(
-                        'Para un día u hora futura',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-                      onTap: () {
-                        Navigator.pop(bottomSheetContext); // Cierra el menú
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) =>
-                              const ManageAppointmentModal(appointment: null),
-                        ).then(
-                          (_) => _fetchAppointmentsForSelectedDate(),
-                        ); // Refrescar al volver
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.flash_on, color: Colors.orange),
-                      title: const Text(
-                        'Servicio Sin Cita (Walk-in)',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      subtitle: const Text(
-                        'Registro rápido al instante',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-                      onTap: () {
-                        Navigator.pop(bottomSheetContext); // Cierra el menú
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => const CreateQuickServiceModal(),
-                        ).then((value) {
-                          // Si el modal devolvió true (éxito), recargamos la lista
-                          if (value == true) {
-                            _fetchAppointmentsForSelectedDate();
-                          }
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              );
-            },
-          );
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const CreateQuickServiceModal(),
+          ).then((value) {
+            // Si el modal devolvió true (éxito en el guardado), recargamos la lista
+            if (value == true) {
+              _fetchAppointmentsForSelectedDate();
+            }
+          });
         },
-      ),*/
+      ),
       body: Column(
         children: [
           // Header Section
