@@ -46,6 +46,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  flutter_launcher_icons: ^0.13.1
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -55,6 +56,16 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+# Configuración para flutter_launcher_icons
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/NexoApp.png" # <--- LA RUTA A TU NUEVO LOGO
+  min_sdk_android: 21 # opcional, depende de tu proyecto
+  # Opcional: Para Android Adaptive Icons (fondo separado)
+  adaptive_icon_background: "#000000" # Color de fondo (ej. negro)
+  adaptive_icon_foreground: "assets/images/NexoApp.png" # Logo solo
 
 # The following section is specific to Flutter packages.
 flutter:
