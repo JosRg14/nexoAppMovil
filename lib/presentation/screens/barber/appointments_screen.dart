@@ -27,19 +27,57 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   Future<List<dynamic>> _fetchNext7Days() async {
     final api = AppointmentsApi();
     final now = DateTime.now();
+
+    final futures = List.generate(7, (i) {
+      final targetDate = now.add(Duration(days: i));
+      return api.getAppointmentsByDate(targetDate);
+    });
+
+    final results = await Future.wait(futures);
+    final allAppointments = results.expand((x) => x).toList();
+
+    // --- EL TRUCO ESTÁ AQUÍ ---
+    // Buscamos si hay alguna cita 'en_proceso' en los datos que acabamos de traer
+    final active = allAppointments.firstWhere(
+      (cita) => cita['estado'] == 'en_proceso',
+      orElse: () => null,
+    );
+
+    if (mounted) {
+      setState(() {
+        _activeAppointment =
+            active; // Esto actualiza el botón inferior automáticamente
+      });
+    }
+
+    return allAppointments;
+  }
+
+  /*Future<List<dynamic>> _fetchNext7Days() async {
+    final api = AppointmentsApi();
+    final now = DateTime.now();
     final futures = List.generate(7, (i) {
       final targetDate = now.add(Duration(days: i));
       return api.getAppointmentsByDate(targetDate);
     });
     final results = await Future.wait(futures);
     return results.expand((x) => x).toList();
-  }
+  }*/
 
   Future<void> _handleServiceNavigation(
     BuildContext context,
     Map<String, dynamic> appointment,
   ) async {
     final int idCita = appointment['id_cita'];
+    final String estadoActual = appointment['estado'] ?? 'pendiente';
+
+    // 1. Si la cita YA está en proceso, navegamos directamente
+    if (estadoActual == 'en_proceso') {
+      _navigateToServiceProgress(context, appointment);
+      return;
+    }
+
+    // 2. Si no está en proceso, intentamos iniciarla en la API
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -50,23 +88,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     final api = AppointmentsApi();
     final success = await api.iniciarCita(idCita);
 
-    if (context.mounted) Navigator.pop(context);
+    if (context.mounted) Navigator.pop(context); // Quitar loader
 
     if (success) {
-      if (!context.mounted) return;
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              ServiceInProgressScreen(appointment: appointment),
-        ),
-      );
-      if (result == true) {
-        setState(() {
-          _activeAppointment = null;
-          _weeklyAppointmentsFuture = _fetchNext7Days();
-        });
-      }
+      _navigateToServiceProgress(context, appointment);
     } else {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -75,6 +100,28 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  // Extraemos la navegación a un método aparte para no repetir código
+  void _navigateToServiceProgress(
+    BuildContext context,
+    Map<String, dynamic> appointment,
+  ) async {
+    if (!context.mounted) return;
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ServiceInProgressScreen(appointment: appointment),
+      ),
+    );
+
+    if (result == true) {
+      setState(() {
+        _activeAppointment = null;
+        _weeklyAppointmentsFuture = _fetchNext7Days();
+      });
     }
   }
 
