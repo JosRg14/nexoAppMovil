@@ -156,6 +156,23 @@ class _CreateQuickServiceModalState extends State<CreateQuickServiceModal> {
       _showSnackBar('Por favor selecciona quién atendió', isError: true);
       return;
     }
+    final now = DateTime.now();
+    // Creamos un objeto DateTime combinando la fecha y hora seleccionadas
+    final selectedDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    if (selectedDateTime.isBefore(now.subtract(const Duration(minutes: 5)))) {
+      _showSnackBar(
+        'No puedes registrar un servicio en una fecha o hora pasada',
+        isError: true,
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
 
