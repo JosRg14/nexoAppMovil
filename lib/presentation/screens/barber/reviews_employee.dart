@@ -24,7 +24,7 @@ class _ReviewsEmployeeScreenState extends State<ReviewsEmployeeScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: Colors.orange),
+            child: CircularProgressIndicator(color: Color(0xFF25B5DA)),
           );
         }
 
@@ -90,7 +90,7 @@ class _ReviewsEmployeeScreenState extends State<ReviewsEmployeeScreen> {
                   style: const TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+                    color: Color(0xFF25B5DA),
                   ),
                 ),
                 const Text(
@@ -131,7 +131,11 @@ class _ReviewsEmployeeScreenState extends State<ReviewsEmployeeScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.star, color: Colors.orange, size: 10),
+                      const Icon(
+                        Icons.star,
+                        color: Color(0xFF25B5DA),
+                        size: 10,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: ClipRRect(
@@ -139,7 +143,7 @@ class _ReviewsEmployeeScreenState extends State<ReviewsEmployeeScreen> {
                           child: LinearProgressIndicator(
                             value: percent,
                             backgroundColor: Colors.white10,
-                            color: Colors.orange,
+                            color: const Color(0xFF25B5DA),
                             minHeight: 4,
                           ),
                         ),
@@ -191,10 +195,10 @@ class _ReviewCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.orange.withOpacity(0.1),
+              backgroundColor: const Color(0xFF25B5DA).withOpacity(0.1),
               child: Text(
                 nombre.isNotEmpty ? nombre[0] : "?",
-                style: const TextStyle(color: Colors.orange),
+                style: const TextStyle(color: Color(0xFF25B5DA)),
               ),
             ),
             const SizedBox(width: 12),
@@ -228,7 +232,7 @@ class _ReviewCard extends StatelessWidget {
             5,
             (i) => Icon(
               i < rating ? Icons.star : Icons.star_border,
-              color: Colors.orange,
+              color: const Color(0xFF25B5DA),
               size: 14,
             ),
           ),

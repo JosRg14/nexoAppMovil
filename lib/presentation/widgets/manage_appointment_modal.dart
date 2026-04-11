@@ -91,14 +91,28 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.appointment != null;
-    final bool isCanceled = _status?.toLowerCase() == 'cancelada';
 
+    // --- NUEVAS VALIDACIONES DE ESTADO ---
+    final String currentStatus = _status?.toLowerCase() ?? '';
+    final bool isCanceled = currentStatus == 'cancelada';
+    final bool isCompleted = currentStatus == 'completada';
+    final bool isReadOnly = isCanceled || isCompleted;
+
+    // Datos del cliente
     final String nombreCliente =
-        widget.appointment?['cliente']?['nombre'] ?? 'Nuevo Cliente';
+        "${widget.appointment?['cliente']?['nombre'] ?? ''} ${widget.appointment?['cliente']?['app_paterno'] ?? ''}"
+            .trim();
+    final String finalNombreCliente = nombreCliente.isEmpty
+        ? 'Nuevo Cliente'
+        : nombreCliente;
+
     final String nombreServicio =
         widget.appointment?['servicio']?['nombre_servicio'] ?? 'Sin servicio';
 
-    // Extraer horas para el nuevo diseño
+    // Datos del barbero (para cuando es solo lectura)
+    final String nombreBarbero =
+        "${widget.appointment?['empleado']?['nombre'] ?? 'Sin'} ${widget.appointment?['empleado']?['app_paterno'] ?? 'asignar'}";
+
     final String horaInicio =
         widget.appointment?['hora_inicio']?.toString().substring(0, 5) ??
         '--:--';
@@ -125,28 +139,31 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
 
           if (isEditing)
             _buildClientInfo(
-              nombreCliente,
+              finalNombreCliente,
               nombreServicio,
               "$horaInicio - $horaFin",
             )
           else
             _buildNewAppointmentFields(),
 
-          // Si la cita está cancelada, ocultamos la selección de barbero y el botón de guardar
-          if (!isCanceled) ...[
-            const SizedBox(height: 32),
-            const Text(
-              'Barbero Asignado',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            _buildBarberDropdown(),
-            const SizedBox(height: 24),
-            if (isEditing) _buildCancelButton(),
-            const SizedBox(height: 16),
-            _buildSubmitButton(isEditing),
-          ] else ...[
-            const SizedBox(height: 32),
+          const SizedBox(height: 32),
+
+          // --- SECCIÓN DE BARBERO ---
+          const Text(
+            'Barbero Asignado',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+
+          // Si es solo lectura, mostramos texto. Si no, el Dropdown.
+          isReadOnly
+              ? _buildStaticBarberInfo(nombreBarbero)
+              : _buildBarberDropdown(),
+
+          const SizedBox(height: 24),
+
+          // --- MENSAJES DE ESTADO FINALIZADO ---
+          if (isCanceled) ...[
             const Center(
               child: Text(
                 'ESTA CITA SE ENCUENTRA CANCELADA',
@@ -158,7 +175,47 @@ class _ManageAppointmentModalState extends State<ManageAppointmentModal> {
               ),
             ),
             const SizedBox(height: 16),
+          ] else if (isCompleted) ...[
+            const Center(
+              child: Text(
+                'LA CITA FUE COMPLETADA',
+                style: TextStyle(
+                  color: Colors.greenAccent,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ] else ...[
+            // Si la cita no está cerrada, mostramos los botones
+            if (isEditing) _buildCancelButton(),
+            const SizedBox(height: 16),
+            _buildSubmitButton(isEditing),
           ],
+        ],
+      ),
+    );
+  }
+
+  // Widget para mostrar el barbero cuando ya no se puede editar
+  Widget _buildStaticBarberInfo(String nombre) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2C).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_user, size: 16, color: Colors.grey),
+          const SizedBox(width: 12),
+          Text(
+            nombre,
+            style: const TextStyle(color: Colors.white70, fontSize: 15),
+          ),
         ],
       ),
     );

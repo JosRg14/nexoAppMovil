@@ -53,17 +53,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     return allAppointments;
   }
 
-  /*Future<List<dynamic>> _fetchNext7Days() async {
-    final api = AppointmentsApi();
-    final now = DateTime.now();
-    final futures = List.generate(7, (i) {
-      final targetDate = now.add(Duration(days: i));
-      return api.getAppointmentsByDate(targetDate);
-    });
-    final results = await Future.wait(futures);
-    return results.expand((x) => x).toList();
-  }*/
-
   Future<void> _handleServiceNavigation(
     BuildContext context,
     Map<String, dynamic> appointment,
@@ -179,26 +168,39 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isNewDay) ...[
-                  if (index > 0) const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.2),
-                      border: Border.all(color: Colors.orange),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _formatDate(currentDate),
-                      style: const TextStyle(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
+                  if (index > 0) const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      // Línea izquierda
+                      Expanded(
+                        child: Divider(
+                          color: const Color(0xFF25B5DA).withOpacity(0.3),
+                          thickness: 1,
+                        ),
                       ),
-                    ),
+                      // Texto de la fecha
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          _formatDate(currentDate),
+                          style: const TextStyle(
+                            color: Color(0xFF25B5DA),
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.1,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      // Línea derecha
+                      Expanded(
+                        child: Divider(
+                          color: const Color(0xFF25B5DA).withOpacity(0.3),
+                          thickness: 1,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                 ],
                 IntrinsicHeight(
                   child: Row(
@@ -373,17 +375,25 @@ class _AppointmentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 4,
+                  vertical: 6, // Un poco más de aire vertical
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
+                  // Fondo Cyan con 0.1 de opacidad
+                  color: const Color(0xFF25B5DA).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  // Opcional: un borde muy sutil para que resalte más
+                  border: Border.all(
+                    color: const Color(0xFF25B5DA).withOpacity(0.2),
+                  ),
                 ),
                 child: Text(
                   price,
                   style: const TextStyle(
-                    color: Colors.black,
+                    color: Color(
+                      0xFF25B5DA,
+                    ), // Texto también Cyan para que combine
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),

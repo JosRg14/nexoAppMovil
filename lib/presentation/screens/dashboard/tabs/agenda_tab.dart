@@ -228,8 +228,8 @@ class _AgendaCard extends StatelessWidget {
     Color statusColor;
 
     switch (status) {
-      case 'confirmada':
-      case 'confirmado':
+      case 'completada':
+      case 'completado':
         statusColor = Colors.greenAccent;
         break;
       case 'pendiente':
