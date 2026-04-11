@@ -9,3 +9,11 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# ... lo que ya tienes ...
+
+# Agrega estas líneas para mayor seguridad y limpieza:
+**/google-services.json
+.externalNativeBuild
+.navigation/
+ASV.log

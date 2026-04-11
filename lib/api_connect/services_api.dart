@@ -13,19 +13,35 @@ class ServicesApi {
     required String descripcion,
     required String precio,
     required String duracion,
+    String? tipoComision, // NUEVO
+    String? comisionPorcentaje, // NUEVO
+    String? comisionFija, // NUEVO
     File? imageFile,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('token');
 
-      // 1. Creamos el FormData (el contenedor para multipart)
+      // 1. Creamos el FormData
       FormData formData = FormData.fromMap({
         'nombre_servicio': nombre,
         'descripcion': descripcion,
         'precio': precio,
         'duracion_estimada': duracion,
       });
+
+      // --- AGREGAR CAMPOS DE COMISIÓN SI EXISTEN ---
+      if (tipoComision != null) {
+        formData.fields.add(MapEntry('tipo_comision', tipoComision));
+      }
+      if (comisionPorcentaje != null && comisionPorcentaje.isNotEmpty) {
+        formData.fields.add(
+          MapEntry('comision_porcentaje', comisionPorcentaje),
+        );
+      }
+      if (comisionFija != null && comisionFija.isNotEmpty) {
+        formData.fields.add(MapEntry('comision_fija', comisionFija));
+      }
 
       if (imageFile != null) {
         formData.files.add(
@@ -56,7 +72,6 @@ class ServicesApi {
         'message': response.data['message'] ?? 'Servicio creado exitosamente',
       };
     } on DioException catch (e) {
-      // Manejo de errores de validación (422)
       if (e.response?.statusCode == 422) {
         final errors = e.response?.data['errors'] as Map<String, dynamic>;
         return {

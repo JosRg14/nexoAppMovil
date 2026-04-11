@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "113357000911-mnipvlh9qus2oo4mp079d2a2obci7ll0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nexoappapp",
+            "certificate_hash": "32087f60ce12e9913fcfff9defeda7fce77562fe"
+          }
+        },
+        {
           "client_id": "113357000911-h8dfvu2tts1qjh9vk6ds2va8qftg85b6.apps.googleusercontent.com",
           "client_type": 3
         }

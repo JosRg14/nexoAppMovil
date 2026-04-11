@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nexoappapp/api_connect/services_api.dart';
 
 class AddServiceScreen extends StatefulWidget {
-  // Cambiado a StatefulWidget
   const AddServiceScreen({super.key});
 
   @override
@@ -12,19 +11,41 @@ class AddServiceScreen extends StatefulWidget {
 }
 
 class _AddServiceScreenState extends State<AddServiceScreen> {
-  // 1. Controladores para capturar el texto
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
   final _durationController = TextEditingController();
 
-  // 2. Variable para guardar la imagen seleccionada
+  // --- NUEVOS CONTROLADORES Y VARIABLES DE COMISIÓN ---
+  final _commissionController = TextEditingController();
+  String _selectedCommissionType = 'Sin comisión';
+
   File? _image;
   final _picker = ImagePicker();
-
   bool _isLoading = false;
 
-  // 3. Función para seleccionar imagen
+  @override
+  void initState() {
+    super.initState();
+    // Escuchar cambios para actualizar el label dinámico
+    _priceController.addListener(_updateUI);
+    _commissionController.addListener(_updateUI);
+  }
+
+  @override
+  void dispose() {
+    _priceController.removeListener(_updateUI);
+    _commissionController.removeListener(_updateUI);
+    _nameController.dispose();
+    _descController.dispose();
+    _priceController.dispose();
+    _durationController.dispose();
+    _commissionController.dispose();
+    super.dispose();
+  }
+
+  void _updateUI() => setState(() {});
+
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -40,8 +61,22 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
   }
 
+  // --- FUNCIÓN PARA CALCULAR LA GANANCIA DINÁMICA ---
+  String _getCalculatedCommission() {
+    final price = double.tryParse(_priceController.text) ?? 0.0;
+    final commission = double.tryParse(_commissionController.text) ?? 0.0;
+    double result = 0.0;
+
+    if (_selectedCommissionType == 'Porcentaje(%)') {
+      result = (price * commission) / 100;
+    } else if (_selectedCommissionType == 'Monto Fijo(\$)') {
+      result = commission;
+    }
+
+    return result.toStringAsFixed(2);
+  }
+
   Future<void> _submitService() async {
-    // Validaciones básicas en el móvil antes de enviar
     if (_nameController.text.isEmpty ||
         _priceController.text.isEmpty ||
         _durationController.text.isEmpty) {
@@ -56,12 +91,28 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     setState(() => _isLoading = true);
 
+    // --- PREPARAR DATOS DE COMISIÓN PARA LA API ---
+    String? tipoComision;
+    String? comisionPorcentaje;
+    String? comisionFija;
+
+    if (_selectedCommissionType == 'Porcentaje(%)') {
+      tipoComision = 'porcentaje';
+      comisionPorcentaje = _commissionController.text;
+    } else if (_selectedCommissionType == 'Monto Fijo(\$)') {
+      tipoComision = 'fija';
+      comisionFija = _commissionController.text;
+    }
+
     final api = ServicesApi();
     final result = await api.createService(
       nombre: _nameController.text,
       descripcion: _descController.text,
       precio: _priceController.text,
       duracion: _durationController.text,
+      tipoComision: tipoComision,
+      comisionPorcentaje: comisionPorcentaje,
+      comisionFija: comisionFija,
       imageFile: _image,
     );
 
@@ -70,19 +121,14 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     if (!mounted) return;
 
     if (result['success']) {
-      // Mostrar el mensaje de éxito que viene de Laravel
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(
-        context,
-        true,
-      ); // Retornamos 'true' para indicar que se actualice la lista anterior
+      Navigator.pop(context, true);
     } else {
-      // Mostrar el mensaje de error de validación de Laravel
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['message']), backgroundColor: Colors.red),
       );
@@ -112,7 +158,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             ),
             const SizedBox(height: 32),
 
-            // NOMBRE
             TextField(
               controller: _nameController,
               style: const TextStyle(color: Colors.white),
@@ -122,7 +167,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             ),
             const SizedBox(height: 24),
 
-            // DESCRIPCIÓN
             TextField(
               controller: _descController,
               maxLines: 3,
@@ -131,7 +175,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             ),
             const SizedBox(height: 24),
 
-            // PRECIO Y DURACIÓN
             TextField(
               controller: _priceController,
               keyboardType: TextInputType.number,
@@ -142,6 +185,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ),
             ),
             const SizedBox(height: 24),
+
             TextField(
               controller: _durationController,
               keyboardType: TextInputType.number,
@@ -152,7 +196,50 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             ),
             const SizedBox(height: 32),
 
-            // SECCIÓN DE IMAGEN
+            // --- NUEVA SECCIÓN DE COMISIÓN ---
+            DropdownButtonFormField<String>(
+              value: _selectedCommissionType,
+              dropdownColor: Colors.grey[900],
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'Tipo de comisión'),
+              items: ['Sin comisión', 'Porcentaje(%)', 'Monto Fijo(\$)']
+                  .map(
+                    (type) => DropdownMenuItem(value: type, child: Text(type)),
+                  )
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedCommissionType = val!;
+                  _commissionController.clear();
+                });
+              },
+            ),
+            const SizedBox(height: 24),
+
+            if (_selectedCommissionType != 'Sin comisión') ...[
+              TextField(
+                controller: _commissionController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: _selectedCommissionType == 'Porcentaje(%)'
+                      ? 'Porcentaje (%)'
+                      : 'Monto Fijo (\$)',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'El empleado ganará: \$${_getCalculatedCommission()}',
+                style: const TextStyle(
+                  color: Colors.greenAccent,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+
+            // --- FIN DE SECCIÓN DE COMISIÓN ---
             Text(
               'Imagen del servicio (opcional)',
               style: TextStyle(color: Colors.grey[400], fontSize: 16),
@@ -171,7 +258,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 ),
                 child: _image != null
                     ? ClipRRect(
-                        // Si hay imagen, la mostramos
                         borderRadius: BorderRadius.circular(8),
                         child: Image.file(_image!, fit: BoxFit.cover),
                       )
@@ -182,16 +268,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       ),
               ),
             ),
-
             const SizedBox(height: 48),
 
             SizedBox(
               width: double.infinity,
               height: 70,
               child: ElevatedButton(
-                onPressed: _isLoading
-                    ? null
-                    : _submitService, // Deshabilita si está cargando
+                onPressed: _isLoading ? null : _submitService,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2C2C2C),
                   foregroundColor: Colors.white,
